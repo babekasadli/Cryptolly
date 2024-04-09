@@ -4,12 +4,11 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
+@Data
 @Table(name = "users")
 public class User {
     @Id
@@ -31,7 +30,7 @@ public class User {
     @Column(name = "password", length = 100, nullable = false)
     private String password;
 
-    @Column(name = "username", length = 100)
+    @Column(name = "username", unique = true, length = 100)
     private String username;
 
     @Column(name = "country", length = 100)
@@ -39,4 +38,8 @@ public class User {
 
     @Column(name = "dob")
     private LocalDate dob;
+
+    @OneToOne
+    @JoinColumn(name = "wallet_id")
+    private Wallet wallet;
 }

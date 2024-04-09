@@ -2,13 +2,19 @@ package com.cryptolly.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -19,28 +25,25 @@ public class SecurityConfig{
     public SecurityConfig(UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
-
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
-
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable
-                )
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) ->
                         authorize
-                                .requestMatchers("/**").permitAll()
+                                .requestMatchers("/api/**", "/", "/swagger-ui.html", "/swagger-ui/**", "/swagger-ui", "/v3/api-docs/**", "/v3/api-docs").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .formLogin((formLogin) -> formLogin
-                        .loginPage("/login")
+                        .loginPage("/api/login-page")
                         .permitAll()
-                        .defaultSuccessUrl("/dashboard")
-                        .failureUrl("/login?error")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .failureUrl("/login-page?error")
                 )
                 .rememberMe((rememberMe) -> rememberMe
                         .rememberMeCookieName("remember-me")
@@ -48,14 +51,19 @@ public class SecurityConfig{
                         .userDetailsService(userDetailsService))
                 .logout((logout) -> logout
                         .deleteCookies("JSESSIONID")
-                        .logoutUrl("/login?logout")
+                        .logoutUrl("/api/logout")
                         .logoutSuccessUrl("/")
                 )
                 .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(50)
-                        .expiredUrl("/login?expired")
+                        .expiredUrl("/login-page?expired")
                 );
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

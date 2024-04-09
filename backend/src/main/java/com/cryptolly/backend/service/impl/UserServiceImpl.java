@@ -4,6 +4,8 @@ import com.cryptolly.backend.dto.UserDTO;
 import com.cryptolly.backend.entity.User;
 import com.cryptolly.backend.repository.UserRepository;
 import com.cryptolly.backend.service.UserService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LogManager.getLogger(UserServiceImpl.class);
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -32,7 +35,9 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         user.setFirstName(userDTO.getFirstName());
         user.setLastName(userDTO.getLastName());
-        return userRepository.save(user);
+        userRepository.save(user);
+        logger.info("User saved: " + user.getEmail());
+        return user;
     }
 
     @Transactional(readOnly = true)
@@ -45,6 +50,7 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("Invalid password");
         }
+        logger.info("User logged in: " + user.getEmail());
         return user;
     }
 
